@@ -48,7 +48,7 @@ $(obj)/Image: vmlinux FORCE
 	$(call if_changed,objcopy)
 	@$(kecho) '  Kernel: $@ is ready'
 ifeq ($(CONFIG_CPU_NUC970),y)
-	cp $@   ../image/970image
+
 endif
 ifeq ($(CONFIG_CPU_N9H30),y)
 	cp $@   ../image/n9h30image
@@ -84,9 +84,6 @@ $(obj)/uImage:	$(obj)/zImage FORCE
 	@$(check_for_multiple_loadaddr)
 	$(call if_changed,uimage)
 	@$(kecho) '  Image $@ is ready'
-ifeq ($(CONFIG_CPU_NUC970),y)
-	cp $@   ../image/970uimage
-endif
 ifeq ($(CONFIG_CPU_N9H30),y)
 	cp $@   ../image/n9h30uimage
 endif

@@ -50,6 +50,8 @@
 #include <linux/i2c.h>
 #include <linux/i2c-gpio.h>
 #include <linux/i2c/i2c-hid.h>
+#include <linux/spi/spi_gpio.h>
+#include <linux/gpio_keys.h>
 
 #include <linux/platform_data/i2c-nuc970.h>
 #include <linux/platform_data/video-nuc970fb.h>
@@ -506,30 +508,30 @@ struct platform_device nuc970fb_device_lcd = {
 
 /* SDIO Controller */
 #if defined(CONFIG_MMC_NUC970_SD) || defined(CONFIG_MMC_NUC970_SD_MODULE)
-static struct resource nuc970_sdh_resource[] = {
-        [0] = {
-                .start = NUC970_PA_SDH,
-                .end   = NUC970_PA_SDH + NUC970_SZ_SDH - 1,
-                .flags = IORESOURCE_MEM,
-        },
-        [1] = {
-                .start = IRQ_SDH,
-                .end   = IRQ_SDH,
-                .flags = IORESOURCE_IRQ,
-        }
-};
+// static struct resource nuc970_sdh_resource[] = {
+//         [0] = {
+//                 .start = NUC970_PA_SDH,
+//                 .end   = NUC970_PA_SDH + NUC970_SZ_SDH - 1,
+//                 .flags = IORESOURCE_MEM,
+//         },
+//         [1] = {
+//                 .start = IRQ_SDH,
+//                 .end   = IRQ_SDH,
+//                 .flags = IORESOURCE_IRQ,
+//         }
+// };
 
-static u64 nuc970_device_sdh_dmamask = 0xffffffffUL;
-struct platform_device nuc970_device_sdh = {
-        .name		  = "nuc970-sdh",
-        .id		  = -1,
-        .num_resources	  = ARRAY_SIZE(nuc970_sdh_resource),
-        .resource	  = nuc970_sdh_resource,
-	    .dev              = {
-		.dma_mask = &nuc970_device_sdh_dmamask,
-		.coherent_dma_mask = 0xffffffffUL
-	}
-};
+// static u64 nuc970_device_sdh_dmamask = 0xffffffffUL;
+// struct platform_device nuc970_device_sdh = {
+//         .name		  = "nuc970-sdh",
+//         .id		  = -1,
+//         .num_resources	  = ARRAY_SIZE(nuc970_sdh_resource),
+//         .resource	  = nuc970_sdh_resource,
+// 	    .dev              = {
+// 		.dma_mask = &nuc970_device_sdh_dmamask,
+// 		.coherent_dma_mask = 0xffffffffUL
+// 	}
+// };
 #endif
 
 /* NAND, eMMC Controller */
@@ -818,6 +820,8 @@ static struct i2c_board_info __initdata nuc970_i2c_clients0[] =
 #ifdef CONFIG_SND_SOC_NAU8822
 	{I2C_BOARD_INFO("nau8822", 0x1a),},
 #endif
+        {I2C_BOARD_INFO("ds1307",0x32),
+        .type = "rx8025"}
 };
 static struct resource nuc970_i2c0_resource[] = {
         [0] = {
@@ -981,6 +985,58 @@ struct platform_device nuc970_device_spi0 = {
 };
 #endif
 
+#if defined(CONFIG_SPI_GPIO)
+static struct spi_gpio_platform_data gpio_spi1_data = {  
+    .sck = NUC970_PA9,  
+    .mosi = NUC970_PA8,  
+//     .miso  = Pin(3),  
+    .num_chipselect = 1,  
+};  
+struct platform_device gpio_spi1_device = {  
+    .name       = "spi_gpio",  
+    .id             = 2,  
+    .dev = {  
+        .platform_data = &gpio_spi1_data,  
+    },  
+}; 
+
+static struct spi_board_info gpio_spi1_board_info[] __initdata = {  
+    {  
+        .modalias   = "spidev",  
+        .max_speed_hz   = 1200000,  
+        .bus_num    = 2,  
+        .chip_select    = 0,  
+        .mode       = SPI_MODE_0,  
+        .controller_data = (void *)NUC970_PA7,   
+    },  
+};
+
+static struct spi_gpio_platform_data gpio_spi2_data = {  
+    .sck = NUC970_PJ1,  
+    .mosi = NUC970_PJ0,  
+    .miso  = NUC970_PJ3,  
+    .num_chipselect = 1,  
+};  
+struct platform_device gpio_spi2_device = {  
+    .name       = "spi_gpio",  
+    .id             = 3,  
+    .dev = {  
+        .platform_data = &gpio_spi2_data,  
+    },  
+}; 
+
+static struct spi_board_info gpio_spi2_board_info[] __initdata = {  
+    {  
+        .modalias   = "spidev",  
+        .max_speed_hz   = 1200000,  
+        .bus_num    = 3,  
+        .chip_select    = 0,  
+        .mode       = SPI_MODE_0,  
+        .controller_data = (void *)NUC970_PJ2,   
+    },  
+};
+#endif
+
 #if defined(CONFIG_SPI_NUC970_P1) || defined(CONFIG_SPI_NUC970_P1_MODULE)
 /* spi device, spi flash info */
 #ifdef CONFIG_BOARD_TOMATO
@@ -1136,6 +1192,59 @@ struct platform_device nuc970_device_kpi = {
 		}
 };
 #endif
+
+static struct gpio_keys_button gpio_buttons[]= {  
+    {  
+       .gpio   = NUC970_PD0,   /* K1 */  
+       .code   = KEY_ESC,  
+       .desc   = "key::esc",  
+       .active_low = 1,  
+   },  
+   {  
+       .gpio   = NUC970_PD1,   /* K1 */  
+       .code   = KEY_ENTER,  
+       .desc   = "key::enter",  
+       .active_low = 1,  
+   },  
+   {  
+       .gpio   = NUC970_PD2,   /* K1 */  
+       .code   = KEY_DOWN,  
+       .desc   = "key::down",  
+       .active_low = 1,  
+   },  
+   {  
+       .gpio   = NUC970_PD3,   /* K1 */  
+       .code   = KEY_RIGHT,  
+       .desc   = "key::right",  
+       .active_low = 1,  
+   },  
+   {  
+       .gpio   = NUC970_PD4,   /* K1 */  
+       .code   = KEY_UP,  
+       .desc   = "key::up",  
+       .active_low = 1,  
+   },  
+   {  
+       .gpio   = NUC970_PD5,   /* K1 */  
+       .code   = KEY_LEFT,  
+       .desc   = "key::left",  
+       .active_low = 1,  
+   },  
+};
+
+static struct gpio_keys_platform_data gpio_button_data = {  
+   .buttons    = gpio_buttons,  
+   .nbuttons   =ARRAY_SIZE(gpio_buttons),  
+   .rep = 1,
+};  
+   
+static struct platform_device gpio_button_device= {  
+   .name   = "gpio-keys",   /* 与platform driver的名字要相同 */  
+   .id = -1,  
+   .dev    = {  
+       .platform_data  =&gpio_button_data,  
+    }  
+}; 
 
 #if defined(CONFIG_RTC_DRV_NUC970) || defined(CONFIG_RTC_DRV_NUC970_MODULE)
 static struct resource nuc970_rtc_resource[] = {
@@ -1454,6 +1563,7 @@ static struct i2c_board_info __initdata nuc970_i2c_clients2[] =
 #ifdef CONFIG_SENSOR_NT99050
 	{I2C_BOARD_INFO("nt99050", 0x21),},
 #endif
+// {I2C_BOARD_INFO("rtc-rx8025",0x32)}
 };
 static struct i2c_gpio_platform_data i2c_gpio_adapter_data = {
     .sda_pin = NUC970_PB1,
@@ -1706,6 +1816,13 @@ static struct platform_device *nuc970_public_dev[] __initdata = {
 	&nuc970_device_spi1,
 #endif
 
+#if defined(CONFIG_SPI_GPIO)
+        &gpio_spi1_device,
+        &gpio_spi2_device,
+#endif
+
+        &gpio_button_device,
+
 #if defined(CONFIG_NUC970_ADC) || defined(CONFIG_NUC970_ADC_MODULE)
 	&nuc970_device_adc,
 #endif
@@ -1776,6 +1893,11 @@ void __init nuc970_platform_init(struct platform_device **device, int size)
     spi_register_board_info(nuc970_spi1_board_info, ARRAY_SIZE(nuc970_spi1_board_info));
 #endif
 #endif
+
+// #if defined(CONFIG_SPI_GPIO)
+    spi_register_board_info(gpio_spi1_board_info, ARRAY_SIZE(gpio_spi1_board_info));
+    spi_register_board_info(gpio_spi2_board_info, ARRAY_SIZE(gpio_spi2_board_info));
+// #endif
 
 #if defined(CONFIG_I2C_BUS_NUC970_P0) || defined(CONFIG_I2C_BUS_NUC970_P0_MODULE)
 	i2c_register_board_info(0, nuc970_i2c_clients0, sizeof(nuc970_i2c_clients0)/sizeof(struct i2c_board_info));
