@@ -203,19 +203,19 @@ static const unsigned kpi_8_pins[] = {0x04, 0x05, 0x6}; // 3 row
 
 
 #ifdef CONFIG_BOARD_TOMATO
-static const unsigned sd0_pins[] = {0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36};
+// static const unsigned sd0_pins[] = {0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36};
 #else
-static const unsigned sd0_pins[] = {0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37};
+// static const unsigned sd0_pins[] = {0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37};
 #endif
 static const unsigned sd1_0_pins[] = {0x85, 0x86, 0x87, 0x88, 0x89, 0x8A, 0x8C, 0x8D}; // Port I
 static const unsigned sd1_1_pins[] = {0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49}; // Port E
 static const unsigned sd1_2_pins[] = {0x76, 0x77, 0x78, 0x79, 0x7A, 0x7B, 0x7C, 0x7D}; // Port H
-static const unsigned sd01_0_pins[] = {0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
-					0x85, 0x86, 0x87, 0x88, 0x89, 0x8A, 0x8C, 0x8D}; // Port I
-static const unsigned sd01_1_pins[] = {0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
-					0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49}; // Port E
-static const unsigned sd01_2_pins[] = {0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
-					0x76, 0x77, 0x78, 0x79, 0x7A, 0x7B, 0x7C, 0x7D}; // Port H
+// static const unsigned sd01_0_pins[] = {0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
+// 					0x85, 0x86, 0x87, 0x88, 0x89, 0x8A, 0x8C, 0x8D}; // Port I
+// static const unsigned sd01_1_pins[] = {0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
+// 					0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49}; // Port E
+// static const unsigned sd01_2_pins[] = {0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
+// 					0x76, 0x77, 0x78, 0x79, 0x7A, 0x7B, 0x7C, 0x7D}; // Port H
 
 static const unsigned nand_0_pins[] = {0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27,
 								0x28, 0x29, 0x2A, 0x2B, 0x2C, 0x2D, 0x2E};  // Port C
@@ -404,6 +404,7 @@ static const unsigned ebi16_4_pin[] = {0x3C,  // nCS4
 				       0x74, 0x75, 0x76, 0x77, 0x78, 0x79, 0x7A, 0x7B, 0x7C, 0x7D, //address0~10
                                        0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87,  // data0~7
                                        0x88, 0x89, 0x8A, 0x8B, 0x8C, 0x8D, 0x8E, 0x8F}; //data8~15
+									   
 // TODO: CKO
 
 static const struct nuc970_pinctrl_group nuc970_pinctrl_groups[] = {
@@ -509,12 +510,12 @@ static const struct nuc970_pinctrl_group nuc970_pinctrl_groups[] = {
 		.num_pins = ARRAY_SIZE(kpi_8_pins),
 		.func = 0x4,
 	},
-	{
-		.name = "sd0_grp",
-		.pins = sd0_pins,
-		.num_pins = ARRAY_SIZE(sd0_pins),
-		.func = 0x6,
-	},
+	// {
+	// 	.name = "sd0_grp",
+	// 	.pins = sd0_pins,
+	// 	.num_pins = ARRAY_SIZE(sd0_pins),
+	// 	.func = 0x6,
+	// },
 	{
 		.name = "sd1_0_grp",
 		.pins = sd1_0_pins,
@@ -533,24 +534,24 @@ static const struct nuc970_pinctrl_group nuc970_pinctrl_groups[] = {
 		.num_pins = ARRAY_SIZE(sd1_2_pins),
 		.func = 0x6,
 	},
-	{
-		.name = "sd01_0_grp",
-		.pins = sd01_0_pins,
-		.num_pins = ARRAY_SIZE(sd01_0_pins),
-		.func = 0x4,
-	},
-	{
-		.name = "sd01_1_grp",
-		.pins = sd01_1_pins,
-		.num_pins = ARRAY_SIZE(sd01_1_pins),
-		.func = 0x6,
-	},
-	{
-		.name = "sd01_2_grp",
-		.pins = sd01_2_pins,
-		.num_pins = ARRAY_SIZE(sd01_2_pins),
-		.func = 0x6,
-	},
+	// {
+	// 	.name = "sd01_0_grp",
+	// 	.pins = sd01_0_pins,
+	// 	.num_pins = ARRAY_SIZE(sd01_0_pins),
+	// 	.func = 0x4,
+	// },
+	// {
+	// 	.name = "sd01_1_grp",
+	// 	.pins = sd01_1_pins,
+	// 	.num_pins = ARRAY_SIZE(sd01_1_pins),
+	// 	.func = 0x6,
+	// },
+	// {
+	// 	.name = "sd01_2_grp",
+	// 	.pins = sd01_2_pins,
+	// 	.num_pins = ARRAY_SIZE(sd01_2_pins),
+	// 	.func = 0x6,
+	// },
 	{
 		.name = "nand_0_grp",
 		.pins = nand_0_pins,
@@ -1923,7 +1924,7 @@ int nuc970_enable(struct pinctrl_dev *pctldev, unsigned selector,
 	unsigned int i, j;
 	unsigned int reg, offset;
 
-	//printk("enable =>%x %x  %s\n", selector, group, nuc970_pinctrl_groups[group].name);
+	// printk("enable =>%x %x  %s\n", selector, group, nuc970_pinctrl_groups[group].name);
 	for(i = 0; i < nuc970_pinctrl_groups[group].num_pins; i++) {
 		j = nuc970_pinctrl_groups[group].pins[i];
 		offset = (j >> 4) * 8 + ((j & 0x8) ? 4 : 0);

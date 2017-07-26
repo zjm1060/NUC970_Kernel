@@ -48,8 +48,6 @@ $(obj)/Image: vmlinux FORCE
 	$(call if_changed,objcopy)
 	@$(kecho) '  Kernel: $@ is ready'
 
-	cp $@   ../image/970image
-	zip ../image/970image.zip ../image/970image
 
 $(obj)/compressed/vmlinux: $(obj)/Image FORCE
 	$(Q)$(MAKE) $(build)=$(obj)/compressed $@
@@ -82,7 +80,6 @@ $(obj)/uImage:	$(obj)/zImage FORCE
 	@$(check_for_multiple_loadaddr)
 	$(call if_changed,uimage)
 	@$(kecho) '  Image $@ is ready'
-	cp $@   ../image/970uimage
 
 $(obj)/bootp/bootp: $(obj)/zImage initrd FORCE
 	$(Q)$(MAKE) $(build)=$(obj)/bootp $@

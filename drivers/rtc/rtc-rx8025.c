@@ -307,6 +307,8 @@ static int rx8025_init_client(struct i2c_client *client, int *need_reset)
 			   RX8025_BIT_CTRL2_CTFG | RX8025_BIT_CTRL2_WAFG |
 			   RX8025_BIT_CTRL2_DAFG);
 		ctrl2 |= RX8025_BIT_CTRL2_XST;
+		// if(*need_reset)
+		// 	ctrl2 |= RX8025_BIT_CTRL2_DAFG;
 
 		err = rx8025_write_reg(client, RX8025_REG_CTRL2, ctrl2);
 	}
@@ -568,7 +570,7 @@ static int rx8025_probe(struct i2c_client *client,
 		struct rtc_time tm;
 		dev_info(&client->dev,
 			 "bad conditions detected, resetting date\n");
-		rtc_time_to_tm(0, &tm);	/* 1970/1/1 */
+		rtc_time_to_tm(1500974253, &tm);	/* 1970/1/1 */
 		rx8025_set_time(&client->dev, &tm);
 	}
 

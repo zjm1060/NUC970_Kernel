@@ -184,12 +184,18 @@ static int nuc970_gpio_core_to_request(struct gpio_chip *chip, unsigned offset)
 		reg = reg + 0x04 ;
 	}
 
+	// printk("request --> GPIO%c%02d\n",(char)(65+group),num1);
+
 	value =	( __raw_readl((volatile unsigned int *)reg) & (0xf<<(num*4)))>>(num*4);
 	if(value>0 && value<0xf)
 	{
 			printk(KERN_ERR "Please Check GPIO%c%02d's multi-function = 0x%x \n",(char)(65+group),num1,value);
-			return -EINVAL;
+			// return -EINVAL;
 	}
+
+	value =	( __raw_readl((volatile unsigned int *)reg) & (~(0xf<<(num*4))));
+	__raw_writel(value, (volatile unsigned int *)reg);
+
 	return 0;
 }
 
