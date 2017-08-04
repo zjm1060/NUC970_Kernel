@@ -85,10 +85,29 @@ struct nuc970_nand_info {
 	struct clk              *clk;
 	struct clk              *fmi_clk;
 
-	void __iomem            *reg;
-	int                     eBCHAlgo;
-	int                     m_i32SMRASize;
-	int                     m_ePageSize;
+#ifndef	CONFIG_MTD_CMDLINE_PARTS
+#ifndef CONFIG_OF
+static struct mtd_partition	partitions[] = {
+	{
+		.name =	"u-boot",
+		.offset	= 0,
+		.size =	2 *	1024 * 1024,
+		.ecclayout = (struct nand_ecclayout*)&nuc970_nand_SYSTEM_oob
+	},
+	{
+		.name =	"boot",
+		.size =	20 * 1024 *	1024,
+		.offset	= MTDPART_OFS_APPEND,
+		.ecclayout = (struct nand_ecclayout*)&nuc970_nand_EXECUTE_oob
+	},
+	{
+		.name =	"user",
+		.offset	= MTDPART_OFS_APPEND,
+		.size =	MTDPART_SIZ_FULL
+	}
+};
+#endif
+#endif
 
 	unsigned char *         pnand_vaddr;
 	unsigned char *         pnand_phyaddr;
