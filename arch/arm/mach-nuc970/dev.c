@@ -820,7 +820,7 @@ static struct mtd_partition nuc970_spi0_flash_partitions[] = {
         },
         {
                 .name = "rootfs",
-                .size = 0x0800000,
+                .size = MTDPART_SIZ_FULL,
                 .offset = 0x0800000,
         },
  #endif
@@ -913,6 +913,18 @@ struct platform_device gpio_spi1_device = {
     },  
 }; 
 
+struct st7565_platform_data {
+    int width;
+    int height;
+    int a0;
+    int rst;
+} st7565_platform_data = {
+        .width = 128,
+        .height = 64,
+        .a0 = NUC970_PA6,
+        .rst = NUC970_PA5
+};
+
 static struct spi_board_info gpio_spi1_board_info[] __initdata = {  
     {  
         .modalias   = "spidev",  
@@ -922,6 +934,15 @@ static struct spi_board_info gpio_spi1_board_info[] __initdata = {
         .mode       = SPI_MODE_0,  
         .controller_data = (void *)NUC970_PA7,   
     },  
+//     {
+//          .modalias   = "st7565fb",  
+//         .max_speed_hz   = 1200000,  
+//         .bus_num    = 2,  
+//         .chip_select    = 0,  
+//         .mode       = SPI_MODE_0,  
+//         .controller_data = (void *)NUC970_PA7,  
+//         .platform_data  = &st7565_platform_data
+//     }
 };
 
 static struct spi_gpio_platform_data gpio_spi2_data = {  
@@ -1007,6 +1028,8 @@ static struct spi_board_info nuc970_spi1_board_info[] __initdata = {
 #endif
 };
 #endif
+
+// static struct spi_board_info st7565_spi2_board_info
 
 static struct nuc970_spi_info nuc970_spi1_platform_data = {
         .num_cs		= 2,

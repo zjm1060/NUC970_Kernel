@@ -93,7 +93,7 @@ static struct mtd_partition	partitions[] = {
 		.ecclayout = (struct nand_ecclayout*)&nuc970_nand_SYSTEM_oob
 	},
 	{
-		.name =	"Kernel",
+		.name =	"boot",
 		.size =	20 * 1024 *	1024,
 		.offset	= MTDPART_OFS_APPEND,
 		.ecclayout = (struct nand_ecclayout*)&nuc970_nand_EXECUTE_oob
