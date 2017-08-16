@@ -1135,36 +1135,42 @@ static struct gpio_keys_button gpio_buttons[]= {
        .code   = KEY_ESC,  
        .desc   = "key::esc",  
        .active_low = 1,  
+       .debounce_interval = 20,
    },  
    {  
        .gpio   = NUC970_PD1,   /* K1 */  
        .code   = KEY_ENTER,  
        .desc   = "key::enter",  
        .active_low = 1,  
+       .debounce_interval = 20,
    },  
    {  
        .gpio   = NUC970_PD2,   /* K1 */  
        .code   = KEY_DOWN,  
        .desc   = "key::down",  
        .active_low = 1,  
+       .debounce_interval = 20,
    },  
    {  
        .gpio   = NUC970_PD3,   /* K1 */  
        .code   = KEY_RIGHT,  
        .desc   = "key::right",  
        .active_low = 1,  
+       .debounce_interval = 20,
    },  
    {  
        .gpio   = NUC970_PD4,   /* K1 */  
        .code   = KEY_UP,  
        .desc   = "key::up",  
        .active_low = 1,  
+       .debounce_interval = 20,
    },  
    {  
        .gpio   = NUC970_PD5,   /* K1 */  
        .code   = KEY_LEFT,  
        .desc   = "key::left",  
        .active_low = 1,  
+       .debounce_interval = 20,
    },  
 };
 
