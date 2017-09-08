@@ -900,8 +900,8 @@ struct platform_device nuc970_device_spi0 = {
 
 #if defined(CONFIG_SPI_GPIO)
 static struct spi_gpio_platform_data gpio_spi1_data = {  
-    .sck = NUC970_PA9,  
-    .mosi = NUC970_PA8,  
+    .sck = NUC970_PF14,  
+    .mosi = NUC970_PF11,  
 //     .miso  = Pin(3),  
     .num_chipselect = 1,  
 };  
@@ -932,7 +932,7 @@ static struct spi_board_info gpio_spi1_board_info[] __initdata = {
         .bus_num    = 2,  
         .chip_select    = 0,  
         .mode       = SPI_MODE_0,  
-        .controller_data = (void *)NUC970_PA7,   
+        // .controller_data = (void *)NUC970_PA7,   
     },  
 //     {
 //          .modalias   = "st7565fb",  
@@ -1131,47 +1131,75 @@ struct platform_device nuc970_device_kpi = {
 
 static struct gpio_keys_button gpio_buttons[]= {  
     {  
+       .gpio   = NUC970_PC13,   /* K1 */  
+       .code   = KEY_1,  
+       .desc   = "key::01",  
+       .active_low = 1,  
+       .debounce_interval = 20,
+   },  
+   {  
        .gpio   = NUC970_PD0,   /* K1 */  
-       .code   = KEY_ESC,  
-       .desc   = "key::esc",  
+       .code   = KEY_2,  
+       .desc   = "key::02",  
        .active_low = 1,  
        .debounce_interval = 20,
    },  
    {  
        .gpio   = NUC970_PD1,   /* K1 */  
-       .code   = KEY_ENTER,  
-       .desc   = "key::enter",  
+       .code   = KEY_3,  
+       .desc   = "key::03",  
        .active_low = 1,  
        .debounce_interval = 20,
    },  
    {  
        .gpio   = NUC970_PD2,   /* K1 */  
-       .code   = KEY_DOWN,  
-       .desc   = "key::down",  
+       .code   = KEY_4,  
+       .desc   = "key::04",  
        .active_low = 1,  
        .debounce_interval = 20,
    },  
    {  
        .gpio   = NUC970_PD3,   /* K1 */  
-       .code   = KEY_RIGHT,  
-       .desc   = "key::right",  
+       .code   = KEY_5,  
+       .desc   = "key::05",  
        .active_low = 1,  
        .debounce_interval = 20,
    },  
    {  
        .gpio   = NUC970_PD4,   /* K1 */  
-       .code   = KEY_UP,  
-       .desc   = "key::up",  
+       .code   = KEY_6,  
+       .desc   = "key::06",  
        .active_low = 1,  
        .debounce_interval = 20,
-   },  
+   }, 
    {  
-       .gpio   = NUC970_PD5,   /* K1 */  
-       .code   = KEY_LEFT,  
-       .desc   = "key::left",  
-       .active_low = 1,  
-       .debounce_interval = 20,
-   },  
+        .gpio   = NUC970_PD5,   /* K1 */  
+        .code   = KEY_7,  
+        .desc   = "key::07",  
+        .active_low = 1,  
+        .debounce_interval = 20,
+    },  
+    {  
+        .gpio   = NUC970_PD6,   /* K1 */  
+        .code   = KEY_8,  
+        .desc   = "key::08",  
+        .active_low = 1,  
+        .debounce_interval = 20,
+    }, 
+    {  
+        .gpio   = NUC970_PE4,   /* K1 */  
+        .code   = KEY_9,  
+        .desc   = "key::09",  
+        .active_low = 1,  
+        .debounce_interval = 20,
+    }, 
+    {  
+        .gpio   = NUC970_PE5,   /* K1 */  
+        .code   = KEY_0,  
+        .desc   = "key::10",  
+        .active_low = 1,  
+        .debounce_interval = 20,
+    }, 
 };
 
 static struct gpio_keys_platform_data gpio_button_data = {  
