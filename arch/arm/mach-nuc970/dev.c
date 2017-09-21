@@ -734,7 +734,8 @@ static struct i2c_board_info __initdata nuc970_i2c_clients0[] =
 	{I2C_BOARD_INFO("nau8822", 0x1a),},
 #endif
         {I2C_BOARD_INFO("ds1307",0x32),
-        .type = "rx8025"}
+        .type = "rx8025"},
+        {I2C_BOARD_INFO("lm75", (0x90 >> 1)),},
 };
 static struct resource nuc970_i2c0_resource[] = {
         [0] = {
@@ -932,7 +933,7 @@ static struct spi_board_info gpio_spi1_board_info[] __initdata = {
         .bus_num    = 2,  
         .chip_select    = 0,  
         .mode       = SPI_MODE_0,  
-        // .controller_data = (void *)NUC970_PA7,   
+        .controller_data = (void *)NUC970_PA7,   
     },  
 //     {
 //          .modalias   = "st7565fb",  
