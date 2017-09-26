@@ -101,6 +101,7 @@ enum ds_type {
 #	define RX8025_BIT_PON		0x10
 #	define RX8025_BIT_VDET		0x40
 #	define RX8025_BIT_XST		0x20
+#	define RX8025_BIT_UIE		0x20
 
 
 struct ds1307 {
@@ -811,7 +812,30 @@ static int ds1307_probe(struct i2c_client *client,
 			i2c_smbus_write_byte_data(client,
 						  DS1307_REG_HOUR << 4 | 0x08,
 						  hour);
+
 		}
+		{
+				i2c_smbus_read_i2c_block_data(ds1307->client,
+						0x0d , 3, buf);
+
+				ds1307->regs[0] &= ~(1<<5);
+				ds1307->regs[1] &= ~(1<<5);
+				ds1307->regs[2] |= RX8025_BIT_UIE|(1<<6);
+				i2c_smbus_write_byte_data(client,
+						0x0d ,
+						ds1307->regs[0]);
+				i2c_smbus_write_byte_data(client,
+						0x0e ,
+						ds1307->regs[1]);
+				i2c_smbus_write_byte_data(client,
+						RX8025_REG_CTRL2 ,
+						ds1307->regs[2]);
+
+				i2c_smbus_read_i2c_block_data(ds1307->client,
+						0x0d, 3, buf);
+
+				printk("---> %02X,%02X,%02X\n",ds1307->regs[0],ds1307->regs[1],ds1307->regs[2]);
+			}
 		break;
 	case ds_1388:
 		ds1307->offset = 1; /* Seconds starts at 1 */
