@@ -300,30 +300,7 @@ static struct platform_device nuc970_serial_device10 = {
 /* LCD controller*/
 #if defined(CONFIG_FB_NUC970) || defined(CONFIG_FB_NUC970_MODULE)
 static struct nuc970fb_display nuc970fb_lcd_info[] = {
-#ifdef CONFIG_A025DL02_320X240
-	/* AUO A035QN02V0 320x240 TFT Panel , 18bits*/
-	[0] = {
-		.type		= LCM_DCCS_VA_SRC_RGB565,
-		.width		= 320,
-		.height		= 240,
-		.xres		= 320,
-		.yres		= 240,
-		.bpp		= 16,
-		.pixclock	= 4000000,
-		.left_margin	= 10,
-		.right_margin   = 54,
-		.hsync_len	= 10,
-		.upper_margin	= 2,
-		.lower_margin	= 4,
-		.vsync_len	= 1,
-		.dccs		= 0x0e00041a,
-		.devctl		= 0x060800c0,
-		.fbctrl		= 0x00a000a0,
-		.scale		= 0x04000400,
-	},
-#endif
 
-#ifdef CONFIG_E50A2V1_800X480
 	/* E50A2V1 800x480 TFT Panel , 24bits*/
 	[0] = {
 #ifdef CONFIG_FB_SRCFMT_RGB888
@@ -337,12 +314,12 @@ static struct nuc970fb_display nuc970fb_lcd_info[] = {
 		.height		= 480,
 		.xres		= 800,
 		.yres		= 480,
-		.pixclock	= 20000000,
-		.left_margin	= 88,
+		.pixclock	= 33300000,
+		.left_margin	= 40,
 		.right_margin   = 40,
 		.hsync_len		= 48,
-		.upper_margin	= 32,
-		.lower_margin	= 13,
+		.upper_margin	= 13,
+		.lower_margin	= 29,
 		.vsync_len		= 3,
 #ifdef CONFIG_FB_SRCFMT_RGB888
 		.dccs		= 0x0e00020a,
@@ -358,30 +335,7 @@ static struct nuc970fb_display nuc970fb_lcd_info[] = {
 #endif
 		.scale		= 0x04000400,
 	},
-#endif
 
-#ifdef CONFIG_ILI9431_MPU80_240x320
-	/* ILI9431 240x320 MPU Panel , 16bits*/
-	[0] = {		
-		.type   = LCM_DCCS_VA_SRC_RGB565,
-		.bpp		= 16,
-		.width		= 240,
-		.height		= 320,
-		.xres		= 240,
-		.yres		= 320,
-		.pixclock	= 6000000,
-		.left_margin	= 6,
-		.right_margin   = 10,
-		.hsync_len		= 2,
-		.upper_margin	= 27,
-		.lower_margin	= 5,
-		.vsync_len		= 11,	
-		.dccs		= 0x0e000400,
-		.fbctrl		= 0x00780078,
-        .devctl		= 0xC50000E0,
-		.scale		= 0x04000400,		
-	},
-#endif
 };
 
 static struct nuc970fb_mach_info nuc970fb_fb_info = {
@@ -1131,13 +1085,13 @@ struct platform_device nuc970_device_kpi = {
 #endif
 
 static struct gpio_keys_button gpio_buttons[]= {  
-    {  
-       .gpio   = NUC970_PC13,   /* K1 */  
-       .code   = KEY_1,  
-       .desc   = "key::01",  
-       .active_low = 1,  
-       .debounce_interval = 20,
-   },  
+//     {  
+//        .gpio   = NUC970_PC13,   /* K1 */  
+//        .code   = KEY_1,  
+//        .desc   = "key::01",  
+//        .active_low = 1,  
+//        .debounce_interval = 20,
+//    },  
    {  
        .gpio   = NUC970_PD0,   /* K1 */  
        .code   = KEY_2,  
@@ -1864,9 +1818,10 @@ void __init nuc970_platform_init(struct platform_device **device, int size)
 #endif
 
 // #if defined(CONFIG_SPI_GPIO)
+#ifdef CONFIG_SPI_SPIDEV
     spi_register_board_info(gpio_spi1_board_info, ARRAY_SIZE(gpio_spi1_board_info));
     spi_register_board_info(gpio_spi2_board_info, ARRAY_SIZE(gpio_spi2_board_info));
-// #endif
+#endif
 
 #if defined(CONFIG_I2C_BUS_NUC970_P0) || defined(CONFIG_I2C_BUS_NUC970_P0_MODULE)
 	i2c_register_board_info(0, nuc970_i2c_clients0, sizeof(nuc970_i2c_clients0)/sizeof(struct i2c_board_info));
