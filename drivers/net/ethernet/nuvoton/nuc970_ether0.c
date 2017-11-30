@@ -1038,7 +1038,11 @@ static void __init get_mac_address(struct net_device *dev)
 
 	pdev = ether->pdev;
 
-	get_random_bytes(nuc970_mac0,6);
+	get_random_bytes(&nuc970_mac0[4],3);
+ 
+ 	nuc970_mac0[0] = 0x00;
+ 	nuc970_mac0[1] = 0x23;
+ 	nuc970_mac0[2] = 0x56;
 
 	if (is_valid_ether_addr(nuc970_mac0))
 		memcpy(dev->dev_addr, &nuc970_mac0[0], 0x06);
