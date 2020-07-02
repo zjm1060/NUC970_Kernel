@@ -941,7 +941,7 @@ static struct spi_board_info nuc970_spi0_board_info[] __initdata = {
                 .modalias = "spidev",
                 .max_speed_hz = 18750000,
                 .bus_num = 0,
-                .chip_select = 1,       //use SS1
+                .chip_select = 0,       //use SS1
                 .mode = SPI_MODE_0,
         },
 #endif

@@ -107,13 +107,13 @@ static int nuc970wdt_start(struct watchdog_device *wdd)
 	val |= WTWKE;
 #endif
 
-	if(wdd->timeout < 2) {
-		val |= 0x5 << 8;
-	} else if (wdd->timeout < 8) {
-		val |= 0x6 << 8;
-	} else {
+	// if(wdd->timeout < 2) {
+	// 	val |= 0x5 << 8;
+	// } else if (wdd->timeout < 8) {
+	// 	val |= 0x6 << 8;
+	// } else {
 		val |= 0x7 << 8;
-	}
+	// }
 
 	local_irq_save(flags);
 	Unlock_RegWriteProtect();
@@ -141,13 +141,13 @@ static int nuc970wdt_set_timeout(struct watchdog_device *wdd, unsigned int timeo
 
 	val = __raw_readl(REG_WDT_CR);
 	val &= ~WTIS;
-	if(timeout < 2) {
-		val |= 0x5 << 8;
-	} else if (timeout < 8) {
-		val |= 0x6 << 8;
-	} else {
+	// if(timeout < 2) {
+	// 	val |= 0x5 << 8;
+	// } else if (timeout < 8) {
+	// 	val |= 0x6 << 8;
+	// } else {
 		val |= 0x7 << 8;
-	}
+	// }
 
 	local_irq_save(flags);
 	Unlock_RegWriteProtect();

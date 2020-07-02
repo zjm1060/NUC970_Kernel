@@ -608,6 +608,12 @@ static void nuc970serial_shutdown(struct uart_port *port)
 static unsigned int nuc970serial_get_divisor(struct uart_port *port, unsigned int baud)
 {
 	unsigned int quot;
+	struct tty_struct *tty = port->state->port.tty;
+
+	if(baud == 300)
+		baud = 250000;
+
+	//printk("%s: uartclk:%u,baud:%u\n",tty->name,port->uartclk,baud);
 
 	quot = (port->uartclk / baud) - 2;
 
