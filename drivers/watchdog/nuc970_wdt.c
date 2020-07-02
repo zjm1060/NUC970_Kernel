@@ -105,13 +105,13 @@ static int nuc970wdt_start(struct watchdog_device *wdd)
 	val |= WTWKE;
 #endif
 
-	if(wdd->timeout < 2) {
-		val |= 0x5 << 8;
-	} else if (wdd->timeout < 8) {
-		val |= 0x6 << 8;
-	} else {
+	// if(wdd->timeout < 2) {
+	// 	val |= 0x5 << 8;
+	// } else if (wdd->timeout < 8) {
+	// 	val |= 0x6 << 8;
+	// } else {
 		val |= 0x7 << 8;
-	}
+	// }
 	Unlock_RegWriteProtect();
 	__raw_writel(val, REG_WDT_CR);
 	Lock_RegWriteProtect();
@@ -136,13 +136,13 @@ static int nuc970wdt_set_timeout(struct watchdog_device *wdd, unsigned int timeo
 	Unlock_RegWriteProtect();
 	val = __raw_readl(REG_WDT_CR);
 	val &= ~WTIS;
-	if(timeout < 2) {
-		val |= 0x5 << 8;
-	} else if (timeout < 8) {
-		val |= 0x6 << 8;
-	} else {
+	// if(timeout < 2) {
+	// 	val |= 0x5 << 8;
+	// } else if (timeout < 8) {
+	// 	val |= 0x6 << 8;
+	// } else {
 		val |= 0x7 << 8;
-	}
+	// }
 
 	__raw_writel(val, REG_WDT_CR);
 	Lock_RegWriteProtect();
@@ -214,7 +214,7 @@ static int nuc970wdt_probe(struct platform_device *pdev)
 		return ret;
 	}
 
-	clklxt = clk_get(NULL, "xin32k");
+	clklxt = clk_get(NULL, "pclk4096_div");
 	if (IS_ERR(clklxt)) {
 		dev_err(&pdev->dev, "failed to get 32k clk\n");
 		ret = PTR_ERR(clklxt);
@@ -244,7 +244,7 @@ static int nuc970wdt_probe(struct platform_device *pdev)
 	clk_prepare(nuc970_wdt->eclk);
 	clk_enable(nuc970_wdt->eclk);
 
-	nuc970_wdd.timeout = 2;		// default time out = 2 sec (2.03)
+	nuc970_wdd.timeout = 8;		// default time out = 2 sec (2.03)
 	nuc970_wdd.min_timeout = 1;	// min time out = 1 sec (0.53)
 	nuc970_wdd.max_timeout = 9;	// max time out = 9 sec (8.03)
 	watchdog_init_timeout(&nuc970_wdd, heartbeat, &pdev->dev);

@@ -651,6 +651,20 @@ static const struct option_blacklist_info cinterion_rmnet2_blacklist = {
 };
 
 static const struct usb_device_id option_ids[] = {
+	{ USB_DEVICE(0x05C6, 0x9090) }, /* Quectel UC15 */
+ { USB_DEVICE(0x05C6, 0x9003) }, /* Quectel UC20 */
+ { USB_DEVICE(0x2C7C, 0x0125) }, /* Quectel EC25 */
+ { USB_DEVICE(0x2C7C, 0x0121) }, /* Quectel EC21 */
+ { USB_DEVICE(0x05C6, 0x9215) }, /* Quectel EC20 */
+ { USB_DEVICE(0x2C7C, 0x0191) }, /* Quectel EG91 */
+ { USB_DEVICE(0x2C7C, 0x0195) }, /* Quectel EG95 */
+ { USB_DEVICE(0x2C7C, 0x0306) }, /* Quectel EG06/EP06/EM06 */
+ { USB_DEVICE(0x2C7C, 0x0296) }, /* Quectel BG96 */
+ { USB_DEVICE(0x2C7C, 0x0435) }, /* Quectel AG35 */
+ { USB_DEVICE(0x2C7C, 0x0512) }, /* Quectel EG12/EG18 */
+ { USB_DEVICE(0x2C7C, 0x6026) }, /* Quectel EC200 */
+ { USB_DEVICE(0x2C7C, 0x6120) }, /* Quectel UC200 */
+ { USB_DEVICE(0x2C7C, 0x6000) }, /* Quectel EC200/UC200 */
 	{ USB_DEVICE(OPTION_VENDOR_ID, OPTION_PRODUCT_COLT) },
 	{ USB_DEVICE(OPTION_VENDOR_ID, OPTION_PRODUCT_RICOLA) },
 	{ USB_DEVICE(OPTION_VENDOR_ID, OPTION_PRODUCT_RICOLA_LIGHT) },
@@ -1877,6 +1891,7 @@ static struct usb_serial_driver option_1port_device = {
 #ifdef CONFIG_PM
 	.suspend           = usb_wwan_suspend,
 	.resume            = usb_wwan_resume,
+	.reset_resume = usb_wwan_resume,
 #endif
 };
 
@@ -1920,6 +1935,31 @@ static int option_probe(struct usb_serial *serial,
 	struct usb_interface_descriptor *iface_desc =
 				&serial->interface->cur_altsetting->desc;
 	struct usb_device_descriptor *dev_desc = &serial->dev->descriptor;
+
+#if 1 //Added by Quectel
+ //Quectel UC20's interface 4 can be used as USB Network device
+ if (serial->dev->descriptor.idVendor == cpu_to_le16(0x05C6) && serial->dev->descriptor.idProduct == cpu_to_le16(0x9003)
+ 	&& serial->interface->cur_altsetting->desc.bInterfaceNumber >= 4)
+ 	return -ENODEV;
+
+ //Quectel EC20's interface 4 can be used as USB Network device
+ if (serial->dev->descriptor.idVendor == cpu_to_le16(0x05C6) && serial->dev->descriptor.idProduct == cpu_to_le16(0x9215)
+ 	&& serial->interface->cur_altsetting->desc.bInterfaceNumber >= 4)
+ 	return -ENODEV;
+
+ if (serial->dev->descriptor.idVendor == cpu_to_le16(0x2C7C)) {
+ 	__u16 idProduct = le16_to_cpu(serial->dev->descriptor.idProduct);
+
+ 	//Quectel EC200&UC200's interface 0 can be used as USB Network device (ecm, rndis)
+ 	if (serial->interface->cur_altsetting->desc.bInterfaceClass != 0xFF)
+ 	return -ENODEV;
+
+ 	//Quectel EC25&EC21&EG91&EG95&EG06&EP06&EM06&BG96&AG35&EG12&EG18's interface 4 can be used as USB network device (qmi,ecm,mbim)
+ 	if ((idProduct != 0x6026 && idProduct != 0x6126)
+ 	&& serial->interface->cur_altsetting->desc.bInterfaceNumber >= 4)
+ 		return -ENODEV;
+ 	}
+#endif
 
 	/* Never bind to the CD-Rom emulation interface	*/
 	if (iface_desc->bInterfaceClass == 0x08)
