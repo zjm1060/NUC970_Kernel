@@ -248,8 +248,17 @@ static __init int setup_macaddr(char *str)
 	// all good
 	for(i = 0; i < 6; i++) {
 		nuc970_mac0[i] = mac[i];
-
 	}
+	
+	printk("mac:%02X:%02X:%02X:%02X:%02X:%02X\n",
+			nuc970_mac0[0],
+			nuc970_mac0[1],
+			nuc970_mac0[2],
+			nuc970_mac0[3],
+			nuc970_mac0[4],
+			nuc970_mac0[5]
+			);
+
 	return 0;
 
 err:
@@ -1085,16 +1094,19 @@ static void __init get_mac_address(struct net_device *dev)
 
 	pdev = ether->pdev;
 
-	get_random_bytes(&nuc970_mac0[4],3);
- 
- 	nuc970_mac0[0] = 0x00;
- 	nuc970_mac0[1] = 0x23;
- 	nuc970_mac0[2] = 0x56;
-
-	if (is_valid_ether_addr(nuc970_mac0))
+	if (is_valid_ether_addr(nuc970_mac0)){
 		memcpy(dev->dev_addr, &nuc970_mac0[0], 0x06);
-	else
+	}else{
 		dev_err(&pdev->dev, "invalid mac address\n");
+		get_random_bytes(&nuc970_mac0[4],3);
+ 
+ 		nuc970_mac0[0] = 0x00;
+ 		nuc970_mac0[1] = 0x23;
+ 		nuc970_mac0[2] = 0x56;
+
+		memcpy(dev->dev_addr, &nuc970_mac0[0], 0x06);
+	}
+	
 }
 
 
