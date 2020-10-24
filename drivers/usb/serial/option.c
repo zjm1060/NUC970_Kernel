@@ -665,6 +665,7 @@ static const struct usb_device_id option_ids[] = {
  { USB_DEVICE(0x2C7C, 0x6026) }, /* Quectel EC200 */
  { USB_DEVICE(0x2C7C, 0x6120) }, /* Quectel UC200 */
  { USB_DEVICE(0x2C7C, 0x6000) }, /* Quectel EC200/UC200 */
+ { USB_DEVICE(0x2C7C, 0x6002) }, /* Quectel EC200S */
 	{ USB_DEVICE(OPTION_VENDOR_ID, OPTION_PRODUCT_COLT) },
 	{ USB_DEVICE(OPTION_VENDOR_ID, OPTION_PRODUCT_RICOLA) },
 	{ USB_DEVICE(OPTION_VENDOR_ID, OPTION_PRODUCT_RICOLA_LIGHT) },
@@ -1937,6 +1938,13 @@ static int option_probe(struct usb_serial *serial,
 	struct usb_device_descriptor *dev_desc = &serial->dev->descriptor;
 
 #if 1 //Added by Quectel
+//EC200S
+ if (serial->dev->descriptor.idVendor == cpu_to_le16(0x2C7C)
+		&& serial->dev->descriptor.idProduct == cpu_to_le16(0x6002)
+		&& ((serial->interface->cur_altsetting->desc.bInterfaceNumber >= 5)
+		||(serial->interface->cur_altsetting->desc.bInterfaceNumber <= 1))) {
+	return -ENODEV;
+ }
  //Quectel UC20's interface 4 can be used as USB Network device
  if (serial->dev->descriptor.idVendor == cpu_to_le16(0x05C6) && serial->dev->descriptor.idProduct == cpu_to_le16(0x9003)
  	&& serial->interface->cur_altsetting->desc.bInterfaceNumber >= 4)
