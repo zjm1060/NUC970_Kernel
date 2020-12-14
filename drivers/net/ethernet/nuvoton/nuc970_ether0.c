@@ -64,6 +64,7 @@
 //#define MCMDR_ENMDC		(0x01 << 19)
 #define MCMDR_OPMOD		(0x01 << 20)
 #define SWR				(0x01 << 24)
+#define MCMDR_TXON_RXON		(MCMDR_TXON | MCMDR_RXON)
 
 /* cam command regiser */
 #define CAMCMR_AUP		0x01
@@ -139,12 +140,18 @@
 
 #define MII_TIMEOUT	100
 
-#define ETH_TRIGGER_RX	do{__raw_writel(ENSTART, REG_RSDR);}while(0)
-#define ETH_TRIGGER_TX	do{__raw_writel(ENSTART, REG_TSDR);}while(0)
-#define ETH_ENABLE_TX	do{__raw_writel(__raw_readl( REG_MCMDR) | MCMDR_TXON, REG_MCMDR);}while(0)
-#define ETH_ENABLE_RX	do{__raw_writel(__raw_readl( REG_MCMDR) | MCMDR_RXON, REG_MCMDR);}while(0)
-#define ETH_DISABLE_TX	do{__raw_writel(__raw_readl( REG_MCMDR) & ~MCMDR_TXON, REG_MCMDR);}while(0)
-#define ETH_DISABLE_RX	do{__raw_writel(__raw_readl( REG_MCMDR) & ~MCMDR_RXON, REG_MCMDR);}while(0)
+#define ETH_SET_REG(reg, val)   __raw_writel((val), (reg))
+#define ETH_SETB_REG(reg, bits)	__raw_writel(__raw_readl(reg) |  (bits), (reg))
+#define ETH_CLRB_REG(reg, bits)	__raw_writel(__raw_readl(reg) & ~(bits), (reg))
+
+#define ETH_TRIGGER_TX    do { ETH_SET_REG(REG_TSDR, ENSTART); } while (0)
+#define ETH_TRIGGER_RX    do { ETH_SET_REG(REG_RSDR, ENSTART); } while (0)
+#define ETH_ENABLE_TX     do { ETH_SETB_REG(REG_MCMDR, MCMDR_TXON); } while (0)
+#define ETH_ENABLE_RX     do { ETH_SETB_REG(REG_MCMDR, MCMDR_RXON); } while (0)
+#define ETH_DISABLE_TX    do { ETH_CLRB_REG(REG_MCMDR, MCMDR_TXON); } while (0)
+#define ETH_DISABLE_RX    do { ETH_CLRB_REG(REG_MCMDR, MCMDR_RXON); } while (0)
+#define ETH_ENABLE_TX_RX  do { ETH_SETB_REG(REG_MCMDR, MCMDR_TXON_RXON); } while (0)
+#define ETH_DISABLE_TX_RX do { ETH_CLRB_REG(REG_MCMDR, MCMDR_TXON_RXON); } while (0)
 
 struct nuc970_rxbd {
 	unsigned int sl;
@@ -382,10 +389,7 @@ static int nuc970_init_desc(struct net_device *dev)
 		tdesc->next = ether->tdesc_phys + offset;
 		tdesc->buffer = (unsigned int)NULL;
 		tdesc->sl = 0;
-		if(i % 4 == 0)	// Trigger TX interrupt every 4 packets
-			tdesc->mode = PADDINGMODE | CRCMODE | MACTXINTEN;
-		else
-			tdesc->mode = PADDINGMODE | CRCMODE;
+		tdesc->mode = PADDINGMODE | CRCMODE | MACTXINTEN;
 	}
 
 	ether->start_tx_ptr = ether->tdesc_phys;
@@ -529,8 +533,7 @@ static void nuc970_reset_mac(struct net_device *dev, int need_free)
 {
 	struct nuc970_ether *ether = netdev_priv(dev);
 
-	ETH_DISABLE_TX;
-	ETH_DISABLE_RX;;
+	ETH_DISABLE_TX_RX;
 
 	nuc970_return_default_idle(dev);
 	nuc970_set_fifo_threshold(dev);
@@ -551,10 +554,6 @@ static void nuc970_reset_mac(struct net_device *dev, int need_free)
 	nuc970_enable_cam(dev);
 	nuc970_enable_cam_command(dev);
 	nuc970_enable_mac_interrupt(dev);
-	ETH_ENABLE_TX;
-	ETH_ENABLE_RX;
-
-	ETH_TRIGGER_RX;
 
 	dev->trans_start = jiffies; /* prevent tx timeout */
 
@@ -624,15 +623,13 @@ static int nuc970_ether_close(struct net_device *dev)
 	struct nuc970_ether *ether = netdev_priv(dev);
 	struct platform_device *pdev;
 
-	pdev = ether->pdev;
-
-	ETH_DISABLE_TX;
-	ETH_DISABLE_RX;
+	ETH_DISABLE_TX_RX;
 	netif_stop_queue(dev);
 	napi_disable(&ether->napi);
 	free_irq(ether->txirq, dev);
 	free_irq(ether->rxirq, dev);
 
+	nuc970_return_default_idle(dev);
 	nuc970_free_desc(dev);
 
 	if (ether->phy_dev)
@@ -655,23 +652,11 @@ static int nuc970_ether_start_xmit(struct sk_buff *skb, struct net_device *dev)
 {
 	struct nuc970_ether *ether = netdev_priv(dev);
 	struct nuc970_txbd *txbd;
-	struct sk_buff *s;
 
 	txbd = ether->tdesc + ether->cur_tx;
 	if(txbd->mode & TX_OWEN_DMA) {
 		netif_stop_queue(dev);
 		return NETDEV_TX_BUSY;
-	}
-	// only recycle descriptor when needed, so tx status shown in ifconfig is not up-to-date.
-	if(likely((s = tx_skb[ether->cur_tx]) != NULL)) {
-		dma_unmap_single(&dev->dev, txbd->buffer, s->len, DMA_TO_DEVICE);
-		dev_kfree_skb(s);
-		if (txbd->sl & TXDS_TXCP) {
-			ether->stats.tx_packets++;
-			ether->stats.tx_bytes += (txbd->sl & 0xFFFF);
-		} else {
-			ether->stats.tx_errors++;
-		}
 	}
 
 
@@ -689,6 +674,12 @@ static int nuc970_ether_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	if (++ether->cur_tx >= TX_DESC_SIZE)
 		ether->cur_tx = 0;
 
+	txbd = ether->tdesc + ether->cur_tx;
+	if(txbd->mode & TX_OWEN_DMA) {
+		netif_stop_queue(dev);
+		//return NETDEV_TX_BUSY;
+	}	
+
 	return NETDEV_TX_OK;
 }
 
@@ -698,6 +689,8 @@ static irqreturn_t nuc970_tx_interrupt(int irq, void *dev_id)
 	struct platform_device *pdev;
 	struct net_device *dev;
 	unsigned int status;
+	struct sk_buff *s;
+	struct nuc970_txbd *txbd;
 
 	dev = dev_id;
 	ether = netdev_priv(dev);
@@ -705,11 +698,30 @@ static irqreturn_t nuc970_tx_interrupt(int irq, void *dev_id)
 
 	nuc970_get_and_clear_int(dev, &status, 0xFFFF0000);
 
+	txbd = ether->tdesc + ether->finish_tx;
+	while((txbd->mode & TX_OWEN_DMA) != TX_OWEN_DMA) {
+		if((s = tx_skb[ether->finish_tx]) != NULL) {
+			dma_unmap_single(&dev->dev, txbd->buffer, s->len, DMA_TO_DEVICE);
+			dev_kfree_skb_irq(s);
+			tx_skb[ether->finish_tx] = NULL;
+			if (txbd->sl & TXDS_TXCP) {
+				ether->stats.tx_packets++;
+				ether->stats.tx_bytes += (txbd->sl & 0xFFFF);
+			} else {
+				ether->stats.tx_errors++;
+			}
+		} else
+			break;
+		ether->finish_tx = (ether->finish_tx + 1) % TX_DESC_SIZE;
+		txbd = ether->tdesc + ether->finish_tx;	
+	}
+
 	if (status & MISTA_EXDEF) {
 		dev_err(&pdev->dev, "emc defer exceed interrupt\n");
 	} else if (status & MISTA_TXBERR) {
 		dev_err(&pdev->dev, "emc bus error interrupt\n");
 		nuc970_reset_mac(dev, 1);
+		ETH_ENABLE_TX_RX;
 	}
 
 	if (netif_queue_stopped(dev)) {
@@ -742,10 +754,9 @@ static int nuc970_poll(struct napi_struct *napi, int budget)
 		status = rxbd->sl;
 		length = status & 0xFFFF;
 
-		if (likely(status & RXDS_RXGD)) {
+		if (likely((status & RXDS_RXGD) && (length <= 1514))) {
 
 			skb = dev_alloc_skb(2048);
-
 			if (!skb) {
 				struct platform_device *pdev = ether->pdev;
 				dev_err(&pdev->dev, "get skb buffer error\n");
@@ -799,7 +810,7 @@ static int nuc970_poll(struct napi_struct *napi, int budget)
 
 rx_out:
 
-	ETH_TRIGGER_RX;
+	ETH_ENABLE_TX_RX;
 	return(rx_cnt);
 }
 
@@ -833,21 +844,11 @@ static irqreturn_t nuc970_rx_interrupt(int irq, void *dev_id)
 
 static int nuc970_ether_open(struct net_device *dev)
 {
-	struct nuc970_ether *ether;
-	struct platform_device *pdev;
-
-	ether = netdev_priv(dev);
-	pdev = ether->pdev;
+	struct nuc970_ether *ether = netdev_priv(dev);
+	struct platform_device *pdev = ether->pdev;
 
 	nuc970_reset_mac(dev, 0);
-	nuc970_set_fifo_threshold(dev);
-	nuc970_set_curdest(dev);
-	nuc970_enable_cam(dev);
-	nuc970_enable_cam_command(dev);
-	nuc970_enable_mac_interrupt(dev);
 	nuc970_set_global_maccmd(dev);
-	ETH_ENABLE_RX;
-
 
 	if (request_irq(ether->txirq, nuc970_tx_interrupt,
 						0x0, pdev->name, dev)) {
@@ -866,7 +867,7 @@ static int nuc970_ether_open(struct net_device *dev)
 	netif_start_queue(dev);
 	napi_enable(&ether->napi);
 
-	ETH_TRIGGER_RX;
+	ETH_ENABLE_TX_RX;
 
 	dev_info(&pdev->dev, "%s is OPENED\n", dev->name);
 
@@ -1216,7 +1217,7 @@ static int nuc970_ether_probe(struct platform_device *pdev)
 	dev->netdev_ops = &nuc970_ether_netdev_ops;
 	dev->ethtool_ops = &nuc970_ether_ethtool_ops;
 
-	dev->tx_queue_len = 16;
+	dev->tx_queue_len = 32;
 	dev->dma = 0x0;
 	dev->watchdog_timeo = TX_TIMEOUT;
 
@@ -1230,7 +1231,7 @@ static int nuc970_ether_probe(struct platform_device *pdev)
 	ether->duplex = DUPLEX_FULL;
 	spin_lock_init(&ether->lock);
 
-	netif_napi_add(dev, &ether->napi, nuc970_poll, 16);
+	netif_napi_add(dev, &ether->napi, nuc970_poll, 32);
 
 	ether_setup(dev);
 
@@ -1239,6 +1240,7 @@ static int nuc970_ether_probe(struct platform_device *pdev)
 		goto err2;
 	}
 
+	netif_carrier_off(dev);
 	error = register_netdev(dev);
 	if (error != 0) {
 		dev_err(&pdev->dev, "register_netdev() failed\n");
@@ -1295,9 +1297,7 @@ static int nuc970_ether_suspend(struct platform_device *pdev, pm_message_t state
 	netif_device_detach(dev);
 
 	if(netif_running(dev)) {
-		ETH_DISABLE_TX;
-		ETH_DISABLE_RX;
-
+		ETH_DISABLE_TX_RX;
 		napi_disable(&ether->napi);
 
 		if(ether->wol) {  // enable wakeup from magic packet
@@ -1331,14 +1331,12 @@ static int nuc970_ether_resume(struct platform_device *pdev)
 
 		napi_enable(&ether->napi);
 
-		ETH_ENABLE_TX;
-		ETH_ENABLE_RX;
+		ETH_ENABLE_TX_RX;
 
 	}
 
 	netif_device_attach(dev);
 	return 0;
-
 }
 
 #else
