@@ -50,9 +50,11 @@ static int smsc_phy_config_init(struct phy_device *phydev)
 	/* If the SMSC PHY is in power down mode, then set it
 	 * in all capable mode before using it.
 	 */
-	if ((rc & MII_LAN83C185_MODE_MASK) == MII_LAN83C185_MODE_POWERDOWN) {
+	// if ((rc & MII_LAN83C185_MODE_MASK) == MII_LAN83C185_MODE_POWERDOWN) 
+	{
 		int timeout = 50000;
 
+		printk("reset phy\n");
 		/* set "all capable" mode and reset the phy */
 		rc |= MII_LAN83C185_MODE_ALL;
 		phy_write(phydev, MII_LAN83C185_SPECIAL_MODES, rc);
@@ -72,10 +74,10 @@ static int smsc_phy_config_init(struct phy_device *phydev)
 		return rc;
 
 	/* Enable energy detect mode for this SMSC Transceivers */
-	rc = phy_write(phydev, MII_LAN83C185_CTRL_STATUS,
-		       rc | MII_LAN83C185_EDPWRDOWN);
-	if (rc < 0)
-		return rc;
+	// rc = phy_write(phydev, MII_LAN83C185_CTRL_STATUS,
+	// 	       rc | MII_LAN83C185_EDPWRDOWN);
+	// if (rc < 0)
+	// 	return rc;
 
 	return smsc_phy_ack_interrupt (phydev);
 }
