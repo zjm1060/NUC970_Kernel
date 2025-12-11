@@ -89,7 +89,11 @@ config	NUC970_SC1_PWRINV
 
 
 config NUC970_ETIMER
+<<<<<<< 87a0c4058e66387f5aff7f9662997bbdd11f7ac7
 	tristate "NUC970/N9H30 Enhance Timer (ETIMER) support"
+=======
+	tristate "NUC970 Enhance Timer (ETIMER) support"
+>>>>>>> Support ETIMER as system clock
 	depends on ARCH_NUC970 && !NUC970_CLK_ETIMER
 	help
 	  Enhance timer driver Nuvoton NUC970/N9H30 Series processor.
