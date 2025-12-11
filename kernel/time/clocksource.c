@@ -573,6 +573,7 @@ static void clocksource_select(void)
 	list_for_each_entry(cs, &clocksource_list, list) {
 		if (strcmp(cs->name, override_name) != 0)
 			continue;
+		printk("clocksource: %s\n", cs->name);
 		/*
 		 * Check to make sure we don't switch to a non-highres
 		 * capable clocksource if the tick code is in oneshot

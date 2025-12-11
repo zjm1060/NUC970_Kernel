@@ -31,7 +31,7 @@
 #include <mach/regs-gcr.h>
 
 #define DRV_MODULE_NAME		"nuc970-emc0"
-#define DRV_MODULE_VERSION	"1.0"
+#define DRV_MODULE_VERSION	"1.1"
 
 /* Ethernet MAC0 Registers */
 #define REG_CAMCMR		(void __iomem *)0xF0002000
@@ -56,6 +56,8 @@
 
 /* mac controller bit */
 #define MCMDR_RXON		0x01
+#define MCMDR_ALP		(0x01 << 1)
+#define MCMDR_ARP		(0x01 << 2)
 #define MCMDR_ACP		(0x01 << 3)
 #define MCMDR_SPCRC		(0x01 << 5)
 #define MCMDR_MGPWAKE		(0x01 << 6)
@@ -66,7 +68,7 @@
 #define SWR				(0x01 << 24)
 #define MCMDR_TXON_RXON		(MCMDR_TXON | MCMDR_RXON)
 
-/* cam command regiser */
+/* cam command register */
 #define CAMCMR_AUP		0x01
 #define CAMCMR_AMP		(0x01 << 1)
 #define CAMCMR_ABP		(0x01 << 2)
@@ -238,17 +240,8 @@ static __init int setup_macaddr(char *str)
 	// all good
 	for(i = 0; i < 6; i++) {
 		nuc970_mac0[i] = mac[i];
-	}
-	
-	printk("mac:%02X:%02X:%02X:%02X:%02X:%02X\n",
-			nuc970_mac0[0],
-			nuc970_mac0[1],
-			nuc970_mac0[2],
-			nuc970_mac0[3],
-			nuc970_mac0[4],
-			nuc970_mac0[5]
-			);
 
+	}
 	return 0;
 
 err:
@@ -264,7 +257,7 @@ static void adjust_link(struct net_device *dev)
 	bool status_change = false;
 	unsigned long flags;
 
-	// clear GPIO interrupt status whihc indicates PHY statu change?
+	// clear GPIO interrupt status which indicates PHY status change?
 
 	spin_lock_irqsave(&ether->lock, flags);
 
@@ -308,7 +301,7 @@ static void adjust_link(struct net_device *dev)
 		}
 
 		__raw_writel(val,  REG_MCMDR);
-		ETH_TRIGGER_TX; // incase some packets queued in descriptor
+		ETH_TRIGGER_TX; // in case some packets queued in descriptor
 	}
 }
 
@@ -497,7 +490,7 @@ static void nuc970_set_global_maccmd(struct net_device *dev)
 	unsigned int val;
 
 	val = __raw_readl( REG_MCMDR);
-	val |= MCMDR_SPCRC | /*MCMDR_ENMDC |*/ MCMDR_ACP /*| ENMDC*/;
+	val |= MCMDR_ALP | MCMDR_SPCRC | /*MCMDR_ENMDC |*/ MCMDR_ACP /*| ENMDC*/;
 	__raw_writel(val,  REG_MCMDR);
 }
 
@@ -529,6 +522,24 @@ static void nuc970_set_curdest(struct net_device *dev)
 	__raw_writel(ether->start_tx_ptr,  REG_TXDLSA);
 }
 
+static void nuc970_enable_alp(struct net_device *dev)
+{
+	unsigned int val;
+
+	val = __raw_readl(REG_MCMDR);
+	val |= MCMDR_ALP;
+	__raw_writel(val, REG_MCMDR);
+}
+#if 0
+static void nuc970_enable_arp(struct net_device *dev)
+{
+	unsigned int val;
+
+	val = __raw_readl(REG_MCMDR);
+	val |= MCMDR_ARP;
+	__raw_writel(val, REG_MCMDR);
+}
+#endif
 static void nuc970_reset_mac(struct net_device *dev, int need_free)
 {
 	struct nuc970_ether *ether = netdev_priv(dev);
@@ -545,7 +556,6 @@ static void nuc970_reset_mac(struct net_device *dev, int need_free)
 		nuc970_free_desc(dev);
 	nuc970_init_desc(dev);
 
-	//dev->trans_start = jiffies; /* prevent tx timeout */
 	ether->cur_tx = 0x0;
 	ether->finish_tx = 0x0;
 	ether->cur_rx = 0x0;
@@ -621,7 +631,6 @@ static int nuc970_set_mac_address(struct net_device *dev, void *addr)
 static int nuc970_ether_close(struct net_device *dev)
 {
 	struct nuc970_ether *ether = netdev_priv(dev);
-	struct platform_device *pdev;
 
 	ETH_DISABLE_TX_RX;
 	netif_stop_queue(dev);
@@ -659,12 +668,11 @@ static int nuc970_ether_start_xmit(struct sk_buff *skb, struct net_device *dev)
 		return NETDEV_TX_BUSY;
 	}
 
-
 	txbd->buffer = dma_map_single(&dev->dev, skb->data,
 					skb->len, DMA_TO_DEVICE);
 
 	tx_skb[ether->cur_tx]  = skb;
-	txbd->sl = skb->len > 1514 ? 1514 : skb->len;
+	txbd->sl = skb->len;
 	wmb();	// This is dummy function for ARM9
 	txbd->mode |= TX_OWEN_DMA;
 	wmb();	// This is dummy function for ARM9
@@ -673,13 +681,11 @@ static int nuc970_ether_start_xmit(struct sk_buff *skb, struct net_device *dev)
 
 	if (++ether->cur_tx >= TX_DESC_SIZE)
 		ether->cur_tx = 0;
-
 	txbd = ether->tdesc + ether->cur_tx;
 	if(txbd->mode & TX_OWEN_DMA) {
 		netif_stop_queue(dev);
 		//return NETDEV_TX_BUSY;
-	}	
-
+	}
 	return NETDEV_TX_OK;
 }
 
@@ -713,7 +719,7 @@ static irqreturn_t nuc970_tx_interrupt(int irq, void *dev_id)
 		} else
 			break;
 		ether->finish_tx = (ether->finish_tx + 1) % TX_DESC_SIZE;
-		txbd = ether->tdesc + ether->finish_tx;	
+		txbd = ether->tdesc + ether->finish_tx;
 	}
 
 	if (status & MISTA_EXDEF) {
@@ -754,7 +760,7 @@ static int nuc970_poll(struct napi_struct *napi, int budget)
 		status = rxbd->sl;
 		length = status & 0xFFFF;
 
-		if (likely((status & RXDS_RXGD) && (length <= 1514))) {
+		if (likely(status & RXDS_RXGD)) {
 
 			skb = dev_alloc_skb(2048);
 			if (!skb) {
@@ -809,8 +815,7 @@ static int nuc970_poll(struct napi_struct *napi, int budget)
 	}
 
 rx_out:
-
-	ETH_ENABLE_TX_RX;
+	ETH_TRIGGER_RX;
 	return(rx_cnt);
 }
 
@@ -827,7 +832,7 @@ static irqreturn_t nuc970_rx_interrupt(int irq, void *dev_id)
 
 		dev_err(&pdev->dev, "emc rx bus error\n");
 		nuc970_reset_mac(dev, 1);
-
+		ETH_ENABLE_TX_RX;
 	} else {
 		if(status & MISTA_WOL) {
 
@@ -868,7 +873,6 @@ static int nuc970_ether_open(struct net_device *dev)
 	napi_enable(&ether->napi);
 
 	ETH_ENABLE_TX_RX;
-
 	dev_info(&pdev->dev, "%s is OPENED\n", dev->name);
 
 	return 0;
@@ -1011,6 +1015,27 @@ static int nuc970_get_ts_info(struct net_device *dev, struct ethtool_ts_info *in
 	return 0;
 }
 
+static int nuc970_change_mtu(struct net_device *dev, int new_mtu)
+{
+	unsigned int val;
+
+	if(new_mtu < 64 || new_mtu > 2048)
+		return -EINVAL;
+
+	if(new_mtu < 1500)
+	{
+		val = __raw_readl(REG_MCMDR);
+		val &= ~(MCMDR_ALP | MCMDR_ARP);
+		__raw_writel(val, REG_MCMDR);
+	}
+	else
+		nuc970_enable_alp(dev);
+
+	dev->mtu = new_mtu;
+
+	return 0;
+}
+
 static const struct ethtool_ops nuc970_ether_ethtool_ops = {
 	.get_settings	= nuc970_get_settings,
 	.set_settings	= nuc970_set_settings,
@@ -1038,7 +1063,7 @@ static const struct net_device_ops nuc970_ether_netdev_ops = {
 	.ndo_set_mac_address	= nuc970_set_mac_address,
 	.ndo_do_ioctl		= nuc970_ether_ioctl,
 	.ndo_validate_addr	= eth_validate_addr,
-	.ndo_change_mtu		= eth_change_mtu,
+	.ndo_change_mtu		= nuc970_change_mtu,
 };
 
 static void __init get_mac_address(struct net_device *dev)
@@ -1048,19 +1073,10 @@ static void __init get_mac_address(struct net_device *dev)
 
 	pdev = ether->pdev;
 
-	if (is_valid_ether_addr(nuc970_mac0)){
+	if (is_valid_ether_addr(nuc970_mac0))
 		memcpy(dev->dev_addr, &nuc970_mac0[0], 0x06);
-	}else{
+	else
 		dev_err(&pdev->dev, "invalid mac address\n");
-		get_random_bytes(&nuc970_mac0[4],3);
- 
- 		nuc970_mac0[0] = 0x00;
- 		nuc970_mac0[1] = 0x23;
- 		nuc970_mac0[2] = 0x56;
-
-		memcpy(dev->dev_addr, &nuc970_mac0[0], 0x06);
-	}
-	
 }
 
 
@@ -1217,7 +1233,7 @@ static int nuc970_ether_probe(struct platform_device *pdev)
 	dev->netdev_ops = &nuc970_ether_netdev_ops;
 	dev->ethtool_ops = &nuc970_ether_ethtool_ops;
 
-	dev->tx_queue_len = 32;
+	dev->tx_queue_len = 32;//16;
 	dev->dma = 0x0;
 	dev->watchdog_timeo = TX_TIMEOUT;
 
@@ -1231,7 +1247,7 @@ static int nuc970_ether_probe(struct platform_device *pdev)
 	ether->duplex = DUPLEX_FULL;
 	spin_lock_init(&ether->lock);
 
-	netif_napi_add(dev, &ether->napi, nuc970_poll, 32);
+	netif_napi_add(dev, &ether->napi, nuc970_poll, /*16*/32);
 
 	ether_setup(dev);
 
@@ -1239,7 +1255,6 @@ static int nuc970_ether_probe(struct platform_device *pdev)
 		dev_err(&pdev->dev, "nuc970_mii_setup err\n");
 		goto err2;
 	}
-
 	netif_carrier_off(dev);
 	error = register_netdev(dev);
 	if (error != 0) {
@@ -1330,9 +1345,7 @@ static int nuc970_ether_resume(struct platform_device *pdev)
 		}
 
 		napi_enable(&ether->napi);
-
 		ETH_ENABLE_TX_RX;
-
 	}
 
 	netif_device_attach(dev);
@@ -1357,7 +1370,7 @@ static struct platform_driver nuc970_ether_driver = {
 	.resume 	= nuc970_ether_resume,
 	.driver		= {
 		.name	= "nuc970-emac0",
-	    .of_match_table = of_match_ptr(nuc970_emac0_of_match),
+		.of_match_table = of_match_ptr(nuc970_emac0_of_match),
 		.owner	= THIS_MODULE,
 	},
 };
@@ -1377,7 +1390,6 @@ module_init(nuc970_ether_init);
 module_exit(nuc970_ether_exit);
 
 MODULE_AUTHOR("Nuvoton Technology Corp.");
-MODULE_DESCRIPTION("NUC970 MAC0 driver");
+MODULE_DESCRIPTION("NUC970/N9H30 MAC0 driver");
 MODULE_LICENSE("GPL");
 MODULE_ALIAS("platform:nuc970-emac0");
-
